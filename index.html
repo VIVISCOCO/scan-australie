@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Scan">
+<meta name="theme-color" content="#F6F7F4">
+<title>Scan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --papier:#F6F7F4; --blanc:#FFFFFF; --encre:#18231E; --doux:#5E6B64; --trait:#DDE2DC;
+    --gum:#2D6A55; --gum-fonce:#1F4D3D;
+    --n-excellent:#1E8E50; --n-bon:#7FAE2E; --n-moyen:#D9940F; --n-mauvais:#CF3F3A;
+    --police:'Bricolage Grotesque', system-ui, sans-serif; --ticket:'IBM Plex Mono', ui-monospace, monospace;
+    --bas: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; background:var(--papier); color:var(--encre); font:17px/1.45 var(--police); font-optical-sizing:auto; }
+  .page { max-width:520px; margin:0 auto; padding:20px 16px calc(120px + var(--bas)); }
+  .cache { display:none !important; }
+  :focus-visible { outline:3px solid var(--gum); outline-offset:2px; }
+  button { font:inherit; color:inherit; cursor:pointer; }
+  svg { flex:none; }
+
+  /* En-tête */
+  .tete { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:22px; }
+  .marque { font-size:28px; font-weight:800; letter-spacing:-0.03em; margin:0; }
+  .lien { background:none; border:0; padding:8px 0; color:var(--gum); font-weight:600; font-size:16px; text-decoration:underline; text-underline-offset:3px; }
+  .saisie { display:flex; gap:8px; margin:-8px 0 22px; }
+  input, textarea { font:inherit; width:100%; padding:13px 14px; border-radius:10px; border:1.5px solid var(--trait); background:var(--blanc); color:var(--encre); }
+  input:focus, textarea:focus { border-color:var(--gum); outline:none; }
+  textarea { min-height:130px; resize:vertical; font-size:16px; }
+
+  /* Ticket de caisse */
+  .ticket { background:var(--blanc); font-family:var(--ticket); font-size:14.5px; padding:22px 18px 26px; position:relative;
+    filter:drop-shadow(0 1px 0 var(--trait));
+    -webkit-mask: radial-gradient(circle 6px at 50% 100%, #0000 98%, #000) 50% 100% / 16px 100% repeat-x;
+            mask: radial-gradient(circle 6px at 50% 100%, #0000 98%, #000) 50% 100% / 16px 100% repeat-x; }
+  .ticket h2 { font-family:var(--police); font-size:20px; font-weight:800; margin:0 0 2px; letter-spacing:-0.01em; }
+  .ticket .sous { color:var(--doux); margin:0 0 16px; font-size:13px; }
+  .ligne { display:grid; grid-template-columns:auto 1fr auto auto; gap:10px; align-items:center; padding:7px 0; border-bottom:1px dashed var(--trait); }
+  .ligne .nom { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pt { display:inline-grid; place-items:center; min-width:34px; height:24px; border-radius:6px; color:#fff; font-weight:600; font-size:13px; }
+  .retirer { background:none; border:0; padding:6px; margin:-6px -6px -6px 0; color:var(--doux); display:grid; place-items:center; }
+  .total { display:flex; justify-content:space-between; font-weight:600; font-size:19px; margin-top:14px; }
+  .moyenne { display:flex; justify-content:space-between; color:var(--doux); margin-top:4px; }
+  .vide { font-family:var(--police); color:var(--doux); margin:0; }
+  .terminer { margin-top:18px; width:100%; padding:13px; border-radius:10px; border:1.5px solid var(--encre); background:none; font-family:var(--police); font-weight:600; }
+  .nouveau { animation:surligne 1.2s ease-out; }
+  @keyframes surligne { from { background:#E3F0E9; } to { background:transparent; } }
+
+  details.dernier { margin-top:26px; }
+  details.dernier summary { font-weight:600; padding:10px 0; cursor:pointer; color:var(--doux); }
+  details.dernier .ticket { margin-top:8px; }
+
+  /* Barre du bas */
+  .barre { position:fixed; left:0; right:0; bottom:0; padding:12px 16px calc(12px + var(--bas)); background:linear-gradient(to top, var(--papier) 70%, #F6F7F400); }
+  .barre > div { max-width:520px; margin:0 auto; display:flex; gap:10px; }
+  .btn { flex:1; display:flex; align-items:center; justify-content:center; gap:10px; border:0; border-radius:14px; padding:17px; font-weight:800; font-size:18px; }
+  .btn-gum { background:var(--gum); color:#fff; } .btn-gum:active { background:var(--gum-fonce); }
+  .btn-clair { background:var(--blanc); color:var(--encre); border:1.5px solid var(--trait); font-weight:600; }
+  .btn:disabled { opacity:.55; }
+
+  /* Fiche produit */
+  .bloc-note { margin:-20px -16px 0; padding:28px 20px 26px; color:#fff; }
+  .bloc-note .retour { color:#fff; display:inline-flex; align-items:center; gap:6px; margin-bottom:18px; }
+  .chiffre { font-size:104px; font-weight:800; line-height:.9; letter-spacing:-0.05em; font-variant-numeric:tabular-nums; }
+  .chiffre small { font-size:24px; font-weight:600; letter-spacing:0; opacity:.85; margin-left:4px; }
+  .verdict { font-size:22px; font-weight:600; margin-top:6px; }
+  .produit { margin:22px 0 4px; font-size:24px; font-weight:800; line-height:1.15; letter-spacing:-0.02em; }
+  .marque-p { color:var(--doux); margin:0; }
+  .raisons { list-style:none; padding:0; margin:20px 0 0; }
+  .raisons li { display:flex; gap:12px; padding:11px 0; border-top:1px solid var(--trait); font-size:16px; }
+  .raisons li:last-child { border-bottom:1px solid var(--trait); }
+  .ingr { margin-top:18px; } .ingr summary { color:var(--gum); font-weight:600; padding:8px 0; cursor:pointer; }
+  .ingr p { color:var(--doux); font-size:15px; margin:6px 0 0; }
+  .prix label { display:block; font-weight:600; margin:26px 0 8px; }
+  .prix .champ { position:relative; } .prix .champ span { position:absolute; left:15px; top:50%; transform:translateY(-50%); color:var(--doux); }
+  .prix input { padding-left:30px; font-size:22px; font-weight:600; }
+
+  /* Scan */
+  .scan-titre { font-size:24px; font-weight:800; margin:0 0 6px; }
+  #lecteur { border-radius:16px; overflow:hidden; background:#000; min-height:280px; margin-top:16px; }
+  #lecteur video { display:block; }
+
+  /* Recherche */
+  .attente { display:flex; flex-direction:column; align-items:center; text-align:center; gap:16px; padding-top:30vh; color:var(--doux); }
+  .rond { width:34px; height:34px; border-radius:50%; border:3px solid var(--trait); border-top-color:var(--gum); animation:tourne .8s linear infinite; }
+  @keyframes tourne { to { transform:rotate(360deg); } }
+
+  /* Inconnu */
+  .titre { font-size:26px; font-weight:800; letter-spacing:-0.02em; margin:4px 0 8px; line-height:1.15; }
+  .texte-doux { color:var(--doux); margin:0 0 20px; }
+  .champ-l { display:block; font-weight:600; margin:18px 0 8px; }
+  .photo-btn { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:18px; border:2px dashed var(--gum); border-radius:14px; background:#EAF2EE; color:var(--gum-fonce); font-weight:800; font-size:17px; }
+  .lecture { display:flex; align-items:center; gap:10px; color:var(--doux); margin-top:12px; } .lecture .rond { width:20px; height:20px; border-width:2.5px; }
+  .coche { display:flex; gap:12px; align-items:flex-start; margin-top:14px; font-size:16px; }
+  .coche input { width:22px; height:22px; margin:1px 0 0; accent-color:var(--gum); flex:none; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+
+<main class="page" id="accueil">
+  <header class="tete">
+    <h1 class="marque">Scan</h1>
+    <button class="lien" id="btnTaper" aria-expanded="false" aria-controls="saisie">Taper un code</button>
+  </header>
+  <form class="saisie cache" id="saisie">
+    <label for="codeManuel" class="cache">Code-barres</label>
+    <input id="codeManuel" inputmode="numeric" autocomplete="off" placeholder="Code-barres, ex. 9339687011247">
+    <button class="btn btn-gum" style="flex:0 0 auto;padding:13px 18px;font-size:16px">Chercher</button>
+  </form>
+
+  <section class="ticket" aria-labelledby="tPanier">
+    <h2 id="tPanier">Course en cours</h2>
+    <p class="sous" id="datePanier"></p>
+    <div id="panier" aria-live="polite"></div>
+  </section>
+
+  <details class="dernier cache" id="carteDernier">
+    <summary>Dernière course</summary>
+    <section class="ticket"><div id="dernier"></div></section>
+  </details>
+</main>
+
+<main class="page cache" id="recherche">
+  <div class="attente" role="status"><div class="rond"></div><p id="msgRecherche">Recherche du produit…</p></div>
+</main>
+
+<main class="page cache" id="scan">
+  <h1 class="scan-titre">Vise le code-barres</h1>
+  <p class="texte-doux" style="margin:0">Tiens le téléphone à 15 cm, le code bien à plat.</p>
+  <div id="lecteur"></div>
+</main>
+
+<main class="page cache" id="fiche">
+  <section class="bloc-note" id="blocNote" aria-live="polite">
+    <button class="lien retour" id="btnRetour"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Retour</button>
+    <div class="chiffre"><span id="chiffre">0</span><small>/100</small></div>
+    <div class="verdict" id="verdict"></div>
+  </section>
+  <h2 class="produit" id="nomProduit"></h2>
+  <p class="marque-p" id="marque"></p>
+  <ul class="raisons" id="raisons"></ul>
+  <details class="ingr"><summary>Voir les ingrédients</summary><p id="ingredients"></p></details>
+  <div class="prix">
+    <label for="prix">Prix payé</label>
+    <div class="champ"><span>$</span><input id="prix" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00"></div>
+  </div>
+</main>
+
+<main class="page cache" id="inconnu">
+  <h1 class="titre" id="titreInconnu">Produit inconnu</h1>
+  <p class="texte-doux" id="msgInconnu"></p>
+  <input id="photo" type="file" accept="image/*" capture="environment" class="cache" aria-label="Photo des ingrédients">
+  <button class="photo-btn" id="btnPhoto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Photographier les ingrédients</button>
+  <div class="lecture cache" id="lecture" role="status"><div class="rond"></div>Lecture de l'étiquette…</div>
+  <label class="champ-l" for="nomManuel">Nom du produit</label>
+  <input id="nomManuel" placeholder="Ex. Coles beef mince 500 g">
+  <label class="champ-l" for="texteIngr">Ingrédients</label>
+  <textarea id="texteIngr" placeholder="La photo remplit ce champ. Corrige les erreurs si besoin."></textarea>
+  <label class="coche"><input type="checkbox" id="estBio"> Bio certifié (ACO, NASAA…)</label>
+  <label class="coche"><input type="checkbox" id="estElevage"> Viande, lait ou œufs : sans antibiotiques ni hormones, plein air ou nourri à l'herbe</label>
+</main>
+
+<nav class="barre" aria-label="Actions">
+  <div id="barreAccueil">
+    <button class="btn btn-clair cache" id="btnTerminer">Terminer</button>
+    <button class="btn btn-gum" id="btnScanner"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>Scanner</button>
+  </div>
+  <div id="barreScan" class="cache"><button class="btn btn-clair" id="btnStop">Annuler</button></div>
+  <div id="barreFiche" class="cache">
+    <button class="btn btn-clair" id="btnRefuser">Je laisse</button>
+    <button class="btn btn-gum" id="btnValider">Je prends</button>
+  </div>
+  <div id="barreInconnu" class="cache">
+    <button class="btn btn-clair" id="btnAnnulerInconnu">Annuler</button>
+    <button class="btn btn-gum" id="btnNoter">Voir la note</button>
+  </div>
+</nav>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="score.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+// Stockage sur le téléphone. Sur iPhone, ajouter l'appli à l'écran d'accueil, sinon Safari peut l'effacer après 7 jours sans visite.
+const lire = (cle, defaut) => { try { return JSON.parse(localStorage.getItem(cle)) ?? defaut; } catch { return defaut; } };
+const ecrire = (cle, val) => { try { localStorage.setItem(cle, JSON.stringify(val)); } catch { alert("Impossible d'enregistrer sur ce téléphone."); } };
+const couleur = n => n >= 75 ? 'var(--n-excellent)' : n >= 50 ? 'var(--n-bon)' : n >= 25 ? 'var(--n-moyen)' : 'var(--n-mauvais)';
+const dollars = n => '$' + n.toFixed(2);
+const echap = t => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+const ICONE = {
+  bon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--n-excellent)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Point fort"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  mauvais: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--n-mauvais)" stroke-width="2.8" stroke-linecap="round" aria-label="À éviter"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  croix: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+};
+let produitCourant = null, codeCourant = null, scanner = null, ajoutRecent = false;
+
+function montrer(id) {
+  for (const s of ['accueil', 'recherche', 'scan', 'fiche', 'inconnu']) $(s).classList.toggle('cache', s !== id);
+  const barre = { accueil: 'barreAccueil', scan: 'barreScan', fiche: 'barreFiche', inconnu: 'barreInconnu' }[id];
+  for (const b of ['barreAccueil', 'barreScan', 'barreFiche', 'barreInconnu']) $(b).classList.toggle('cache', b !== barre);
+  window.scrollTo(0, 0);
+}
+
+function lignes(items, retirable) {
+  return items.map((a, i) => `<div class="ligne${retirable && ajoutRecent && i === items.length - 1 ? ' nouveau' : ''}">
+    <span class="pt" style="background:${couleur(a.note)}">${a.note}</span><span class="nom">${echap(a.nom)}</span><span>${dollars(a.prix)}</span>
+    ${retirable ? `<button class="retirer" data-retirer="${i}" aria-label="Retirer ${echap(a.nom)}">${ICONE.croix}</button>` : '<span></span>'}</div>`).join('');
+}
+function pied(items) {
+  const total = items.reduce((s, a) => s + a.prix, 0), moy = Math.round(items.reduce((s, a) => s + a.note, 0) / items.length);
+  return `<div class="total"><span>Total</span><span>${dollars(total)}</span></div>
+    <div class="moyenne"><span>${items.length} article${items.length > 1 ? 's' : ''}, note moyenne</span><span>${moy}/100</span></div>`;
+}
+const jour = t => new Date(t).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+function afficherAccueil() {
+  const panier = lire('panier', []);
+  $('datePanier').textContent = jour(Date.now());
+  $('panier').innerHTML = panier.length ? lignes(panier, true) + pied(panier)
+    : '<p class="vide">Rien pour l\'instant. Scanne un produit : s\'il te convient, il s\'ajoute ici avec son prix.</p>';
+  ajoutRecent = false;
+  $('btnTerminer').classList.toggle('cache', !panier.length);
+  const d = lire('dernierPanier', null);
+  $('carteDernier').classList.toggle('cache', !d);
+  if (d) $('dernier').innerHTML = `<h2>${jour(d.date)}</h2><p class="sous"></p>${lignes(d.items, false)}${pied(d.items)}`;
+  montrer('accueil');
+}
+
+$('btnTaper').onclick = () => {
+  const ouvert = $('saisie').classList.toggle('cache') === false;
+  $('btnTaper').setAttribute('aria-expanded', ouvert);
+  if (ouvert) $('codeManuel').focus();
+};
+$('saisie').onsubmit = e => {
+  e.preventDefault();
+  const c = $('codeManuel').value.replace(/\D/g, '');
+  if (c.length < 8) { alert('Un code-barres a au moins 8 chiffres.'); return; }
+  $('codeManuel').value = ''; chercher(c);
+};
+$('panier').addEventListener('click', e => {
+  const b = e.target.closest('[data-retirer]'); if (!b) return;
+  const panier = lire('panier', []); panier.splice(+b.dataset.retirer, 1); ecrire('panier', panier); afficherAccueil();
+});
+$('btnTerminer').onclick = () => {
+  const panier = lire('panier', []);
+  if (!confirm(`Terminer la course (${dollars(panier.reduce((s, a) => s + a.prix, 0))}) ? Le panier repart de zéro.`)) return;
+  ecrire('dernierPanier', { date: Date.now(), items: panier, total: panier.reduce((s, a) => s + a.prix, 0) });
+  ecrire('panier', []); afficherAccueil();
+};
+
+// --- Scan du code-barres ---
+$('btnScanner').onclick = async () => {
+  montrer('scan');
+  try {
+    const F = Html5QrcodeSupportedFormats;
+    scanner = new Html5Qrcode('lecteur', { formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E], verbose: false });
+    await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 260, height: 130 } }, async code => {
+      await arreterScan(); if (navigator.vibrate) navigator.vibrate(40); chercher(code);
+    });
+  } catch {
+    await arreterScan(); afficherAccueil();
+    alert("La caméra ne s'est pas ouverte. Autorise la caméra pour ce site dans les réglages du téléphone, ou tape le code-barres.");
+  }
+};
+async function arreterScan() { if (scanner) { try { await scanner.stop(); scanner.clear(); } catch {} scanner = null; } }
+$('btnStop').onclick = async () => { await arreterScan(); afficherAccueil(); };
+
+async function chercher(code) {
+  codeCourant = code;
+  const memoire = lire('produits', {});
+  if (memoire[code]) return afficherFiche(memoire[code]);
+  montrer('recherche');
+  let p = null;
+  try {
+    const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,brands,ingredients_text,ingredients_text_en,additives_tags,labels_tags,nova_group,categories_tags,nutriments`, { signal: AbortSignal.timeout(12000) });
+    if (r.ok) p = (await r.json()).product;
+    else if (r.status !== 404) throw new Error(r.status);
+  } catch { return demanderPhoto("Pas de réponse de la base de produits", "Vérifie ta connexion. Tu peux aussi photographier les ingrédients : la note se calcule sur le téléphone."); }
+  const ingredients = p && (p.ingredients_text_en || p.ingredients_text);
+  if (!p) return demanderPhoto('Produit inconnu', "Il n'est pas encore dans la base. Photographie la liste des ingrédients : l'appli la lit et retiendra ce produit pour la prochaine fois.");
+  if (!ingredients) return demanderPhoto(p.product_name || 'Produit sans ingrédients', "Ce produit est dans la base, mais sans ses ingrédients. Photographie-les pour obtenir la note.", p.product_name);
+  const n = p.nutriments || {};
+  afficherFiche({ nom: p.product_name || 'Produit sans nom', marque: p.brands, ingredients, additifs: p.additives_tags, labels: p.labels_tags, categories: p.categories_tags, nova: p.nova_group, sucre: n.sugars_100g, sel: n.salt_100g, proteines: n.proteins_100g });
+}
+
+function afficherFiche(p) {
+  produitCourant = p;
+  const r = noter(p);
+  p.note = r.note;
+  $('blocNote').style.background = couleur(r.note);
+  $('verdict').textContent = r.niveau;
+  $('nomProduit').textContent = p.nom; $('marque').textContent = p.marque || '';
+  const tri = [...r.raisons.filter(x => !x.bon), ...r.raisons.filter(x => x.bon)];
+  $('raisons').innerHTML = tri.map(x => `<li>${x.bon ? ICONE.bon : ICONE.mauvais}<span>${echap(x.txt)}</span></li>`).join('') || `<li>${ICONE.bon}<span>Rien à signaler</span></li>`;
+  $('ingredients').textContent = p.ingredients;
+  $('prix').value = '';
+  montrer('fiche');
+  compter(r.note);
+}
+// Le seul mouvement de l'appli : la note monte jusqu'à sa valeur.
+function compter(fin) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { $('chiffre').textContent = fin; return; }
+  const t0 = performance.now(), duree = 550;
+  const pas = t => { const k = Math.min(1, (t - t0) / duree); $('chiffre').textContent = Math.round(fin * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(pas); };
+  requestAnimationFrame(pas);
+}
+$('btnRetour').onclick = $('btnRefuser').onclick = afficherAccueil;
+$('btnValider').onclick = () => {
+  const prix = parseFloat($('prix').value.replace(',', '.').replace('$', ''));
+  if (!(prix >= 0)) { $('prix').focus(); $('prix').placeholder = 'Indique le prix'; return; }
+  const panier = lire('panier', []);
+  panier.push({ nom: produitCourant.nom, note: produitCourant.note, prix, code: codeCourant });
+  ecrire('panier', panier); ajoutRecent = true;
+  const fin = ajoutRecent; afficherAccueil();
+  if (fin) { const l = $('panier').querySelector('.nouveau'); if (l) l.scrollIntoView({ block: 'nearest' }); }
+};
+
+// --- Produit inconnu : lecture de la photo sur le téléphone (gratuit, sans IA en ligne) ---
+function demanderPhoto(titre, message, nom) {
+  $('titreInconnu').textContent = titre; $('msgInconnu').textContent = message;
+  $('nomManuel').value = nom || ''; $('texteIngr').value = ''; $('estBio').checked = $('estElevage').checked = false;
+  montrer('inconnu');
+}
+$('btnPhoto').onclick = () => $('photo').click();
+$('photo').onchange = async () => {
+  const f = $('photo').files[0]; if (!f) return;
+  $('lecture').classList.remove('cache'); $('btnPhoto').disabled = true;
+  try { $('texteIngr').value = await lireEtiquette(f); }
+  catch { alert("La photo n'a pas pu être lue. Reprends-la plus nette, ou tape les ingrédients."); }
+  $('lecture').classList.add('cache'); $('btnPhoto').disabled = false; $('photo').value = '';
+};
+async function lireEtiquette(image) {
+  const { data } = await Tesseract.recognize(image, 'eng');
+  const t = data.text.replace(/\s+/g, ' ').trim();
+  const i = t.search(/ingredients?\s*:?/i);
+  return i >= 0 ? t.slice(i).replace(/^ingredients?\s*:?\s*/i, '') : t;
+}
+$('btnAnnulerInconnu').onclick = afficherAccueil;
+$('btnNoter').onclick = () => {
+  const ingredients = $('texteIngr').value.trim();
+  if (!ingredients) { $('texteIngr').focus(); $('texteIngr').placeholder = 'Il faut la liste des ingrédients pour calculer la note.'; return; }
+  const p = { nom: $('nomManuel').value.trim() || 'Produit ' + codeCourant, ingredients,
+    labels: [$('estBio').checked ? 'organic' : '', $('estElevage').checked ? 'antibiotic free' : ''] };
+  const memoire = lire('produits', {}); memoire[codeCourant] = p; ecrire('produits', memoire);
+  afficherFiche(p);
+};
+
+afficherAccueil();
+</script>
+</body>
+</html>
